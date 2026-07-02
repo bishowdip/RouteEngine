@@ -1,0 +1,10 @@
+# ST5003CEM Advanced Algorithms coursework -- route-engine
+# Libraries are used ONLY for data loading, visualisation, plotting and
+# validation. All algorithms/data structures are hand-implemented in src/.
+osmnx>=2.0          # pull the Kathmandu road graph from OpenStreetMap
+networkx>=3.0       # graph IO + reference oracle for validating our algorithms
+matplotlib>=3.7     # benchmark plots
+pandas>=2.0         # tabular results
+numpy>=1.24         # arrays, theoretical-curve fitting
+folium>=0.15        # render a computed route on a real map (Task 2)
+pytest>=7.0         # test suite
