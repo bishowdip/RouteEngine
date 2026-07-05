@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Environments
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Generated artefacts and coursework write-up (not part of the code repo)
+/report/
+/figures/
+/data/
+/cache/
