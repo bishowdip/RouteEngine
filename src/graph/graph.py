@@ -43,6 +43,27 @@ class Graph:
         if not self.directed:
             self._adj[v].append((u, weight))
 
+    def remove_edge(self, u: int, v: int) -> bool:
+        """Remove edge(s) u->v (and v->u if undirected). Return True if removed."""
+        if u not in self._adj:
+            return False
+        before = len(self._adj[u])
+        self._adj[u] = [(w, wt) for w, wt in self._adj[u] if w != v]
+        removed = len(self._adj[u]) != before
+        if removed and not self.directed and v in self._adj:
+            self._adj[v] = [(w, wt) for w, wt in self._adj[v] if w != u]
+        return removed
+
+    def remove_node(self, u: int) -> bool:
+        """Remove a node and all incident edges. Return True if it existed."""
+        if u not in self._adj:
+            return False
+        del self._adj[u]
+        self.coords.pop(u, None)
+        for w, nbrs in self._adj.items():
+            self._adj[w] = [(x, wt) for x, wt in nbrs if x != u]
+        return True
+
     # ---------------------------------------------------------------- queries
     @property
     def num_nodes(self) -> int:
@@ -63,6 +84,28 @@ class Graph:
 
     def has_node(self, u: int) -> bool:
         return u in self._adj
+
+    def has_edge(self, u: int, v: int) -> bool:
+        """True if an edge u->v exists. O(deg(u))."""
+        if u not in self._adj:
+            return False
+        return any(w == v for w, _ in self._adj[u])
+
+    def get_edge_weight(self, u: int, v: int) -> Optional[float]:
+        """Weight of the lightest u->v edge, or None if absent. O(deg(u))."""
+        if u not in self._adj:
+            raise KeyError(f"node {u!r} not in graph")
+        best: Optional[float] = None
+        for w, weight in self._adj[u]:
+            if w == v and (best is None or weight < best):
+                best = weight
+        return best
+
+    def degree(self, u: int) -> int:
+        """Number of incident edges (out-arcs for a directed graph)."""
+        if u not in self._adj:
+            raise KeyError(f"node {u!r} not in graph")
+        return len(self._adj[u])
 
     def edges(self) -> Iterator[Tuple[int, int, float]]:
         """Yield each edge once (undirected) or each arc (directed)."""
