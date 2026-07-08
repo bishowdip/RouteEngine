@@ -57,6 +57,28 @@ class Trie:
             node = node.children[ch]
         return node
 
+    def delete(self, key: str) -> bool:
+        """Remove ``key`` if present, pruning now-empty nodes. O(L)."""
+        path = [self._root]
+        for ch in key:
+            nxt = path[-1].children.get(ch)
+            if nxt is None:
+                return False
+            path.append(nxt)
+        leaf = path[-1]
+        if not leaf.is_end:
+            return False
+        leaf.is_end = False
+        leaf.value = None
+        self._size -= 1
+        # prune childless, non-terminal nodes bottom-up
+        for depth in range(len(key) - 1, -1, -1):
+            node = path[depth + 1]
+            if node.children or node.is_end:
+                break
+            del path[depth].children[key[depth]]
+        return True
+
     def starts_with(self, prefix: str) -> List[str]:
         """All stored keys beginning with ``prefix`` (autocomplete)."""
         node = self._find(prefix)

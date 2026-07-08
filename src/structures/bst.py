@@ -176,3 +176,47 @@ class BinarySearchTree:
             cur = stack.pop()
             yield cur.key
             cur = cur.right
+
+    def min_key(self) -> Any:
+        """Smallest key (leftmost node). Raises on an empty tree. O(h)."""
+        if self.root is None:
+            raise ValueError("min_key on an empty tree")
+        cur = self.root
+        while cur.left is not None:
+            cur = cur.left
+        return cur.key
+
+    def max_key(self) -> Any:
+        """Largest key (rightmost node). Raises on an empty tree. O(h)."""
+        if self.root is None:
+            raise ValueError("max_key on an empty tree")
+        cur = self.root
+        while cur.right is not None:
+            cur = cur.right
+        return cur.key
+
+    def successor(self, key: Any) -> Optional[Any]:
+        """Smallest key strictly greater than ``key`` (in-order successor)."""
+        succ: Optional[Any] = None
+        cur = self.root
+        while cur is not None:
+            if key < cur.key:
+                succ = cur.key
+                cur = cur.left
+            else:
+                cur = cur.right
+        return succ
+
+    def level_order(self) -> Iterator[Any]:
+        """Breadth-first key traversal (level by level)."""
+        from collections import deque
+        if self.root is None:
+            return
+        q = deque([self.root])
+        while q:
+            node = q.popleft()
+            yield node.key
+            if node.left is not None:
+                q.append(node.left)
+            if node.right is not None:
+                q.append(node.right)

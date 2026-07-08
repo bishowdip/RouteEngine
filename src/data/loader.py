@@ -185,6 +185,25 @@ def synthetic_city_graph(n: int, *, seed: int = 42, shortcut_prob: float = 0.08)
     return largest_connected_component(g)
 
 
+def as_travel_time_graph(graph: Graph, default_kmph: float = 30.0) -> Graph:
+    """Re-weight a length-weighted (metres) graph by travel time in seconds.
+
+    travel_time = length_m / speed_m_per_s, with a single default driving speed
+    (Kathmandu traffic averages ~20-30 km/h). This lets the same Dijkstra answer
+    *fastest* routes rather than *shortest*, as the brief's dataset note allows.
+    Coordinates are preserved so map/TSP code still works.
+    """
+    if default_kmph <= 0:
+        raise ValueError("default speed must be positive")
+    speed_mps = default_kmph * 1000.0 / 3600.0
+    out = Graph(directed=graph.directed)
+    for u in graph.nodes():
+        out.add_node(u, coord=graph.coords.get(u))
+    for u, v, length in graph.edges():
+        out.add_edge(u, v, weight=length / speed_mps)
+    return out
+
+
 def random_dense_graph(n: int, *, density: float = 0.5, seed: int = 42,
                        max_weight: float = 100.0) -> Graph:
     """Synthetic dense graph for the list-vs-matrix / Dijkstra-density tests."""

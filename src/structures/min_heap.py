@@ -119,3 +119,30 @@ class MinHeap:
                 self.decrease_key(payload, priority)
         else:
             self.insert(priority, payload)
+
+    def replace_min(self, priority: Any, payload: Any) -> Tuple[Any, Any]:
+        """Pop the min and push a new item in one sift-down. O(log n).
+
+        Cheaper than extract_min + insert (one re-heapify instead of two) -- a
+        common pattern when streaming items through a fixed-size frontier.
+        """
+        if not self._heap:
+            raise IndexError("replace_min on an empty heap")
+        if payload in self._pos:
+            raise KeyError(f"payload {payload!r} already in heap")
+        top = self._heap[0]
+        del self._pos[top[1]]
+        self._heap[0] = (priority, payload)
+        self._pos[payload] = 0
+        self._sift_down(0)
+        return top
+
+
+def heapsort(values: List[Any]) -> List[Any]:
+    """Sort ascending by repeatedly extracting the min. O(n log n).
+
+    Uses the min-heap itself as the sorting engine: build_heap is O(n), then n
+    extract-min calls are O(n log n) overall.
+    """
+    heap = MinHeap([(v, i) for i, v in enumerate(values)])
+    return [heap.extract_min()[0] for _ in range(len(values))]

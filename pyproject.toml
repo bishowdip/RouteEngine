@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "route-engine"
+version = "0.1.0"
+description = "A unified route-planning and logistics engine for Kathmandu"
+requires-python = ">=3.11"
+dependencies = [
+    "osmnx>=2.0",
+    "networkx>=3.0",
+    "matplotlib>=3.7",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "folium>=0.15",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+route-engine = "src.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
