@@ -86,6 +86,22 @@ class ChainingHashTable:
         for bucket in self._buckets:
             yield from bucket
 
+    def keys(self) -> Iterator[Any]:
+        for k, _ in self.items():
+            yield k
+
+    def values(self) -> Iterator[Any]:
+        for _, v in self.items():
+            yield v
+
+    def __iter__(self) -> Iterator[Any]:
+        return self.keys()
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        """Like dict.get: return the value or ``default`` if absent."""
+        v = self.search(key)
+        return default if v is _MISSING else v
+
 
 class OpenAddressingHashTable:
     """Open addressing with quadratic probing and tombstone deletion.
@@ -177,6 +193,22 @@ class OpenAddressingHashTable:
         for k, v in zip(self._keys, self._values):
             if k is not _MISSING and k is not _TOMBSTONE:
                 yield k, v
+
+    def keys(self) -> Iterator[Any]:
+        for k, _ in self.items():
+            yield k
+
+    def values(self) -> Iterator[Any]:
+        for _, v in self.items():
+            yield v
+
+    def __iter__(self) -> Iterator[Any]:
+        return self.keys()
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        """Like dict.get: return the value or ``default`` if absent."""
+        v = self.search(key)
+        return default if v is _MISSING else v
 
 
 # Exposed sentinel so callers/tests can check for "absent" unambiguously.
