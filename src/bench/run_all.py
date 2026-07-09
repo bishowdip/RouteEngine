@@ -12,6 +12,7 @@ import time
 def main() -> None:
     from src.bench import (
         bench_astar,
+        bench_comparisons,
         bench_task1,
         bench_task2,
         bench_task3,
@@ -26,6 +27,7 @@ def main() -> None:
         ("Task 3 -- strategies", bench_task3.main),
         ("Task 4 -- TSP heuristics", bench_task4.main),
         ("Task 5 -- concurrency", bench_task5.main),
+        ("Algorithm comparisons", bench_comparisons.main),
     ]
     t0 = time.perf_counter()
     for name, fn in steps:
