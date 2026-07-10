@@ -79,14 +79,24 @@ class RouteEngineGUI:
         self.positions: Dict[int, tuple] = {}
         self.source: Optional[int] = None
         self.target: Optional[int] = None
+        self._current_path: List[int] = []
+        self._scale = 1.0
+        self._press = None
+        self._moved = False
 
         self._build_controls()
         self._build_canvas()
         self._build_statusbar()
         self.canvas.bind("<Configure>", self._on_resize)
-        self.canvas.bind("<Button-1>", self._on_click)
-        self._set_status(f"Loaded {graph.num_nodes} junctions and {graph.num_edges} "
-                         f"roads ({source_kind} data). Click a start, then a destination.")
+        self.canvas.bind("<ButtonPress-1>", self._on_press)
+        self.canvas.bind("<B1-Motion>", self._on_drag)
+        self.canvas.bind("<ButtonRelease-1>", self._on_release)
+        self.canvas.bind("<MouseWheel>", self._on_wheel)          # macOS / Windows
+        self.canvas.bind("<Button-4>", lambda e: self._zoom_at(e.x, e.y, 1.1))  # Linux up
+        self.canvas.bind("<Button-5>", lambda e: self._zoom_at(e.x, e.y, 0.9))  # Linux down
+        self._set_status(f"Loaded {graph.num_nodes} junctions and {graph.num_edges} roads "
+                         f"({source_kind} data). Drag to pan, scroll to zoom; click a start, "
+                         f"then a destination.")
 
     def _build_controls(self) -> None:
         bar = tk.Frame(self.root, bg=PANEL, padx=10, pady=8)
@@ -100,12 +110,30 @@ class RouteEngineGUI:
         ttk.Button(bar, text="3 alternatives", command=self._show_alternatives).pack(side=tk.LEFT, padx=4)
         ttk.Button(bar, text="Spanning tree", command=self._show_mst).pack(side=tk.LEFT, padx=4)
         ttk.Button(bar, text="Clear", command=self._clear).pack(side=tk.LEFT, padx=4)
+        ttk.Button(bar, text="-", width=3, command=lambda: self._zoom_centre(0.83)).pack(side=tk.LEFT, padx=(12, 2))
+        ttk.Button(bar, text="+", width=3, command=lambda: self._zoom_centre(1.2)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(bar, text="Reset view", command=self._reset_view).pack(side=tk.LEFT, padx=4)
         self.info = tk.Label(bar, text="", bg=PANEL, fg=MUTED)
         self.info.pack(side=tk.RIGHT)
 
     def _build_canvas(self) -> None:
-        self.canvas = tk.Canvas(self.root, bg=BG, highlightthickness=0)
-        self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        body = tk.Frame(self.root, bg=BG)
+        body.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        # right-hand panel listing the exact ordered path
+        side = tk.Frame(body, bg=PANEL, width=250)
+        side.pack(side=tk.RIGHT, fill=tk.Y)
+        side.pack_propagate(False)
+        tk.Label(side, text="Shortest path (in order)", bg=PANEL, fg=TEXT,
+                 anchor="w", padx=8, pady=6).pack(side=tk.TOP, fill=tk.X)
+        tw = tk.Frame(side, bg=PANEL); tw.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        sb = tk.Scrollbar(tw); sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.path_text = tk.Text(tw, bg=BG, fg=TEXT, wrap="word", width=30, relief="flat",
+                                 padx=8, pady=6, yscrollcommand=sb.set, insertbackground=TEXT)
+        self.path_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.path_text.config(state="disabled")
+        sb.config(command=self.path_text.yview)
+        self.canvas = tk.Canvas(body, bg=BG, highlightthickness=0)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def _build_statusbar(self) -> None:
         self.status = tk.Label(self.root, text="", bg=PANEL, fg=TEXT, anchor="w", padx=10, pady=4)
@@ -115,6 +143,7 @@ class RouteEngineGUI:
         w = self.canvas.winfo_width() or 1000
         h = self.canvas.winfo_height() or 600
         self.positions = project_nodes(self.graph.coords, w, h)
+        self._scale = 1.0
 
     def _draw_base_graph(self) -> None:
         self.canvas.delete("all")
@@ -149,20 +178,59 @@ class RouteEngineGUI:
     def _on_resize(self, _e) -> None:
         self._reproject(); self._draw_base_graph(); self._recompute(silent=True)
 
-    def _on_click(self, event) -> None:
+    # ---- pan (drag), zoom (wheel / buttons), and click-to-select ----
+    def _on_press(self, event) -> None:
+        self._press = (event.x, event.y); self._moved = False
+
+    def _on_drag(self, event) -> None:
+        if self._press is None:
+            return
+        dx, dy = event.x - self._press[0], event.y - self._press[1]
+        if abs(dx) + abs(dy) > 3:
+            self._moved = True
+        self.canvas.move("all", dx, dy)
+        for n, (x, y) in self.positions.items():
+            self.positions[n] = (x + dx, y + dy)
+        self._press = (event.x, event.y)
+
+    def _on_release(self, event) -> None:
+        if not self._moved:
+            self._select_at(event.x, event.y)
+        self._press = None
+
+    def _select_at(self, x, y) -> None:
         if not self.positions:
             return
-        node = nearest_node(self.positions, event.x, event.y, max_dist=20)
+        node = nearest_node(self.positions, x, y, max_dist=22)
         if node is None:
             return
         if self.source is None or (self.source is not None and self.target is not None):
             self.source, self.target = node, None
-            self.canvas.delete("route")
+            self.canvas.delete("route"); self._current_path = []; self._write_path("")
             self._set_status(f"Start = junction {node}. Now click a destination.")
         else:
             self.target = node
             self._recompute()
         self._draw_markers()
+
+    def _on_wheel(self, event) -> None:
+        self._zoom_at(event.x, event.y, 1.1 if event.delta > 0 else 0.9)
+
+    def _zoom_centre(self, factor) -> None:
+        self._zoom_at((self.canvas.winfo_width() or 800) / 2,
+                      (self.canvas.winfo_height() or 600) / 2, factor)
+
+    def _zoom_at(self, cx, cy, factor) -> None:
+        new_scale = self._scale * factor
+        if new_scale < 0.25 or new_scale > 12:   # clamp the zoom range
+            return
+        self._scale = new_scale
+        self.canvas.scale("all", cx, cy, factor, factor)
+        for n, (x, y) in self.positions.items():
+            self.positions[n] = (cx + (x - cx) * factor, cy + (y - cy) * factor)
+
+    def _reset_view(self) -> None:
+        self._reproject(); self._draw_base_graph(); self._recompute(silent=True)
 
     def _recompute(self, silent=False) -> None:
         self.canvas.delete("route")
@@ -179,8 +247,10 @@ class RouteEngineGUI:
         ms = (time.perf_counter() - t0) * 1e3
         if not path or cost == float("inf"):
             self._set_status(f"No route between {self.source} and {self.target}."); return
+        self._current_path = path
         self._draw_path(path, ROUTE); self._draw_markers()
         self.info.config(text=f"{algo}: {format_distance(cost)} - {len(path)} hops")
+        self._set_path(f"{algo}: {format_distance(cost)}", path)
         if not silent:
             self._set_status(f"{algo} route {self.source} to {self.target}: "
                              f"{format_distance(cost)}, {len(path)} hops, {ms:.1f} ms{extra}.")
@@ -197,6 +267,12 @@ class RouteEngineGUI:
         for i, (cost, path) in reversed(list(enumerate(paths))):
             self._draw_path(path, ALT_COLOURS[i % len(ALT_COLOURS)], width=5 - i)
         self._draw_markers()
+        lines = []
+        for i, (c, p) in enumerate(paths, 1):
+            lines.append(f"Route {i}: {format_distance(c)} ({len(p) - 1} hops)")
+            lines.append("  ->  ".join(str(n) for n in p))
+            lines.append("")
+        self._write_path("\n".join(lines))
         summary = "   ".join(f"#{i+1} {format_distance(c)}" for i, (c, _) in enumerate(paths))
         self._set_status(f"{len(paths)} alternative routes ({ms:.1f} ms):   {summary}")
 
@@ -209,13 +285,31 @@ class RouteEngineGUI:
             if u in self.positions and v in self.positions:
                 x1, y1 = self.positions[u]; x2, y2 = self.positions[v]
                 self.canvas.create_line(x1, y1, x2, y2, fill=SOURCE, width=2, tags="route")
+        self._write_path(f"Minimum spanning backbone:\n{len(edges)} roads, "
+                         f"total {format_distance(total)}.\n\n(This connects every junction; "
+                         f"it is a tree, not a single path.)")
         self._set_status(f"Minimum spanning backbone: {len(edges)} roads, "
                          f"total {format_distance(total)} ({ms:.1f} ms).")
 
     def _clear(self) -> None:
         self.source = self.target = None
-        self.canvas.delete("route"); self.info.config(text="")
-        self._draw_markers(); self._set_status("Cleared. Click the map to choose a new start.")
+        self.canvas.delete("route"); self.info.config(text=""); self._current_path = []
+        self._write_path(""); self._draw_markers()
+        self._set_status("Cleared. Click the map to choose a new start.")
+
+    def _write_path(self, text) -> None:
+        self.path_text.config(state="normal")
+        self.path_text.delete("1.0", "end")
+        self.path_text.insert("end", text)
+        self.path_text.config(state="disabled")
+        self.path_text.see("1.0")
+
+    def _set_path(self, header, path) -> None:
+        if not path:
+            self._write_path(""); return
+        text = f"{header}\n{len(path)} junctions, {len(path) - 1} hops\n\n"
+        text += "  ->  ".join(str(n) for n in path)
+        self._write_path(text)
 
     def _set_status(self, text) -> None:
         self.status.config(text=text)
