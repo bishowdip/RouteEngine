@@ -16,6 +16,42 @@ and *validating* the results against a reference oracle.
 | 4 | NP-hard TSP + heuristics — nearest-neighbour, insertion, 2-opt, or-opt, simulated annealing, GRASP | `src/heuristics/` |
 | 5 | Concurrency — threading vs multiprocessing for multi-source shortest paths | `src/concurrency/` |
 
+## Setup
+
+```bash
+python -m venv .venv && source .venv/bin/activate   # optional
+pip install -r requirements.txt
+```
+
+Python 3.11+ is required (developed on 3.13). `make install` runs the same
+`pip install`.
+
+## Command-line interface
+
+```bash
+route-engine info                      # graph size and connectivity summary
+route-engine route <src> <dst>         # shortest path (Dijkstra / A*)
+route-engine mst                       # minimum spanning tree weight
+route-engine gui                       # launch the desktop app
+```
+
+The engine can also be run as a module without installing: `python -m src …`.
+
+## Desktop GUI
+
+An interactive Tkinter route-planner with click-to-route, alternative routes,
+an MST overlay, zoom/pan and an ordered shortest-path panel:
+
+```bash
+make gui           # or: python -m src.gui   /   route-engine gui
+```
+
+## Tests
+
+```bash
+make test          # or: python -m pytest -q
+```
+
 ## Library boundary (academic-integrity note)
 
 `networkx` is used **only** to (a) load/convert the OpenStreetMap graph and
