@@ -23,7 +23,7 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from src.heuristics.nearest_neighbour import nearest_neighbour
 from src.heuristics.tsp import TSPInstance

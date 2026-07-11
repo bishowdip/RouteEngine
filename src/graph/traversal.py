@@ -10,7 +10,7 @@ Complexity: O(V + E) time, O(V) space for each.
 from __future__ import annotations
 
 from collections import deque
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from src.graph.graph import Graph
 
