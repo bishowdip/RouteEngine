@@ -12,7 +12,6 @@ Must be run as a script (``__main__``) so multiprocessing can spawn workers.
 from __future__ import annotations
 
 import time
-from typing import List
 
 import matplotlib
 
