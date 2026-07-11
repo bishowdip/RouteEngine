@@ -58,3 +58,34 @@ make test          # or: python -m pytest -q
 (b) act as a reference oracle to validate the hand-written algorithms — never as
 the solution itself. `heapq` is **not** used for the priority queue; that is our
 own `src/structures/min_heap.py`.
+
+## Benchmarks and figures
+
+Every task has a benchmark driver; a single command regenerates all figures into
+`figures/`:
+
+```bash
+make figures       # or: python -m src.bench.run_all
+```
+
+Individual drivers (`python -m src.bench.bench_task1` … `bench_task5`) can be run
+in isolation. All timings use `time.perf_counter` with one warm-up run and report
+mean ± stdev over repeated trials; random seeds are fixed for reproducibility.
+Re-running on different hardware shifts the absolute timings but not the
+asymptotic shapes.
+
+## Project layout
+
+```
+src/
+  structures/    Task 1 — hand-built data structures
+  graph/         Task 2 — graph representation and algorithms
+  strategies/    Task 3 — DP, greedy and backtracking
+  heuristics/    Task 4 — TSP construction and local search
+  concurrency/   Task 5 — parallel shortest paths
+  data/          OpenStreetMap loader with caching and synthetic fallback
+  bench/         benchmark drivers, timing harness and plotting
+  cli.py         command-line interface
+  gui.py         interactive Tkinter desktop app
+tests/           pytest suite cross-validated against networkx
+```
