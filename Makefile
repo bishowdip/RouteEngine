@@ -1,4 +1,4 @@
-.PHONY: install test figures clean
+.PHONY: install test figures gui clean
 
 install:
 	pip install -r requirements.txt
@@ -9,6 +9,10 @@ test:
 # Single command to regenerate every figure/table into figures/
 figures:
 	python -m src.bench.run_all
+
+# Launch the interactive desktop GUI
+gui:
+	python -m src.gui
 
 clean:
 	rm -rf figures/*.png figures/*.html

@@ -15,7 +15,7 @@ sequences lengthen super-linearly (~1/(1-alpha)); both resize to stay healthy.
 
 from __future__ import annotations
 
-from typing import Any, Iterator, List, Optional, Tuple
+from typing import Any, Iterator, List, Tuple
 
 _MISSING = object()       # sentinel: never stored
 _TOMBSTONE = object()     # sentinel: deleted slot in open addressing

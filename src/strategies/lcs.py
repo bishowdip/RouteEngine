@@ -15,7 +15,7 @@ trajectories through the city by their shared ordered waypoints.
 
 from __future__ import annotations
 
-from typing import List, Sequence, Tuple
+from typing import Sequence, Tuple
 
 
 def lcs(x: Sequence, y: Sequence) -> Tuple[int, list]:

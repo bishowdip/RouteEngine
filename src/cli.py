@@ -63,6 +63,13 @@ def cmd_mst(args):
     return 0
 
 
+def cmd_gui(args):
+    """Launch the interactive desktop GUI."""
+    from src.gui import launch
+    launch(limit=args.limit)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="route-engine", description=__doc__)
     p.add_argument("--limit", type=int, default=2000,
@@ -80,6 +87,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     m = sub.add_parser("mst", help="minimum spanning backbone")
     m.set_defaults(func=cmd_mst)
+
+    sub.add_parser("gui", help="launch the interactive desktop GUI").set_defaults(func=cmd_gui)
     return p
 
 

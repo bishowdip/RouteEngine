@@ -67,8 +67,7 @@ def load_city_graph(
     """
     os.makedirs(os.path.abspath(DATA_DIR), exist_ok=True)
     try:
-        import networkx as nx  # noqa: F401
-        import osmnx as ox
+        import osmnx as ox  # pulls in networkx as a dependency
 
         cache = _cache_path(place)
         if use_cache and os.path.exists(cache):
