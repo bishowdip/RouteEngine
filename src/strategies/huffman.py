@@ -13,7 +13,7 @@ ops). In the route engine this compresses repetitive log/telemetry streams.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
 
 from src.structures.min_heap import MinHeap
 
